@@ -53,7 +53,13 @@ function closest_contour(𝐈::Image, 𝐦::Vector, θ::Number)
 
     # If there is no contour before the edge of the image,
     # use `loc_in_image` to place ∞ values.
-    return floor.(Int, loc_in_image(𝐦))
+    return floor.(Int, loc_in_image(𝐈, 𝐦))
+end
+
+""" Distance feature. """
+function distance(𝐈::Image, 𝐦::Vector, θ::Number)
+    𝐜 = closest_contour(𝐈, 𝐦, θ)
+    return norm(𝐜 - 𝐦)
 end
 
 end # module
