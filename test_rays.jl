@@ -80,3 +80,5 @@ orientation_demo(𝐈, 𝐦, θ)
 norm_demo(𝐈, 𝐦, θ)
 
 Rays2D.dist_difference(𝐈, 𝐦, 2π/3, π)
+
+# TODO: implement optimizations from 3.3
