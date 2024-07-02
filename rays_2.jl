@@ -19,7 +19,7 @@ Image(intensities::Array, contours::Array) = Image(
     Array{Vector{Float64}}(undef, size(intensities)...),
     Array{Float64}(undef, size(intensities)...),
     BitArray(fill(false, size(intensities)...)),
-    Dict{Tuple{Number}, Vector{Float64}}()
+    Dict{Tuple, Vector{Float64}}()
 )
 
 """ Checks that a given location 𝐦 is in the bounds of `image`. """
@@ -48,7 +48,7 @@ end
 """ Checks if a given location 𝐦 is a contour in the image 𝐈. """
 is_contour(𝐈::Image, 𝐦::Vector) = (0 != 𝐈.contours[floor.(Int, 𝐦)...])
 
-function ray_vector(θ::Number, γ::Number=nothing)
+function ray_vector(θ, γ=nothing)
     if isnothing(γ) # 2D case
         return [cos(θ), sin(θ)]
     else # 3D case
@@ -78,8 +78,8 @@ function get_grad_norm(𝐈::Image, 𝐦::Vector)
 end
 
 """ Closest contour point 𝐜. θ, γ in radians."""
-function closest_contour(𝐈::Image, 𝐦::Vector, θ::Number, γ::Number=nothing)
-    if (θ, γ) in 𝐈.cc_memo
+function closest_contour(𝐈::Image, 𝐦::Vector, θ, γ=nothing)
+    if haskey(𝐈.cc_memo, (θ, γ))
         return 𝐈.cc_memo[(θ, γ)]
     end
     # Otherwise find it
@@ -100,7 +100,7 @@ function closest_contour(𝐈::Image, 𝐦::Vector, θ::Number, γ::Number=nothi
 end
 
 """ Distance feature. """
-function get_distance(𝐈::Image, 𝐦::Vector, θ::Number, γ::Number=nothing)
+function get_distance(𝐈::Image, 𝐦::Vector, θ, γ=nothing)
     𝐜 = closest_contour(𝐈, 𝐦, θ, γ)
     if (Inf in 𝐜) || (-Inf in 𝐜)
         return Inf
@@ -109,7 +109,7 @@ function get_distance(𝐈::Image, 𝐦::Vector, θ::Number, γ::Number=nothing)
 end
 
 """ Orientation feature. """ # TODO: seems to have some issues. demo
-function get_orientation(𝐈::Image, 𝐦::Vector, θ::Number, γ::Number=nothing)
+function get_orientation(𝐈::Image, 𝐦::Vector, θ, γ=nothing)
     𝐜 = closest_contour(𝐈, 𝐦, θ, γ)
     if (Inf in 𝐜) || (-Inf in 𝐜)
         return NaN
@@ -118,7 +118,7 @@ function get_orientation(𝐈::Image, 𝐦::Vector, θ::Number, γ::Number=nothi
 end
 
 """ Norm feature. """
-function get_norm(𝐈::Image, 𝐦::Vector, θ::Number, γ::Number=nothing)
+function get_norm(𝐈::Image, 𝐦::Vector, θ, γ=nothing)
     𝐜 = closest_contour(𝐈, 𝐦, θ, γ)
     if (Inf in 𝐜) || (-Inf in 𝐜)
         return NaN
@@ -130,10 +130,10 @@ end
 function get_dist_difference(
         𝐈 ::Image, 
         𝐦 ::Vector, 
-        θ ::Number, 
-        θ′::Number, 
-        γ ::Number=nothing, 
-        γ′::Number=nothing
+        θ , 
+        θ′, 
+        γ =nothing, 
+        γ′=nothing
     )
     𝐜  = closest_contour(𝐈, 𝐦, θ , γ )
     𝐜′ = closest_contour(𝐈, 𝐦, θ′, γ′)
