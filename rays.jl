@@ -2,25 +2,47 @@ module Rays
 
 using LinearAlgebra
 using ImageFiltering
+using Infiltrator
 
 struct Image
-    intensities::Array
-    contours::Array
-    normalized_gradient::Array # of gradient vectors
-    gradient_norm::Array
-    grad_calculated::BitArray # true if gradient has been calculated
+    intensities::AbstractArray
+    contours::AbstractArray{Bool}
+    normalized_gradient::AbstractArray # of gradient vectors
+    gradient_norm::AbstractArray
+    grad_calculated::AbstractArray{Bool} # true if gradient has been calculated
     cc_memo::Dict # Memo of closest contours. Key is tuple of angle(s)
 end
 
 """ Constructs an Image from intensities and contours. """
-Image(intensities::Array, contours::Array) = Image(
+Image(intensities::AbstractArray, contours::AbstractArray) = Image(
     intensities,
     contours,
     Array{Vector{Float64}}(undef, size(intensities)...),
     Array{Float64}(undef, size(intensities)...),
-    BitArray(fill(false, size(intensities)...)),
+    AbstractArray{Bool}(fill(false, size(intensities)...)),
     Dict{Tuple, Vector{Float64}}()
 )
+
+""" Constructs an Image from intensities, contours, gradients, and gradient norms. """
+function Image(
+    intensities::AbstractArray, 
+    contours::AbstractArray{Bool}, 
+    gradient::AbstractArray{<:AbstractVector}, 
+    gradient_norm::AbstractArray
+)
+    normalized_gradient = gradient ./ gradient_norm
+    grad_calculated = trues(size(intensities))
+    cc_memo = Dict{Tuple, Vector{Float64}}()
+    @infiltrate
+    return Image(
+        intensities,
+        contours,
+        normalized_gradient,
+        gradient_norm,
+        grad_calculated,
+        cc_memo
+    )
+end
 
 """ Checks that a given location 𝐦 is in the bounds of `image`. """
 function in_bounds(𝐈::Image, 𝐦::Vector)
@@ -77,7 +99,7 @@ function get_grad_norm(𝐈::Image, 𝐦::Vector)
     return 𝐈.gradient_norm[𝐦...]
 end
 
-""" Closest contour point 𝐜. θ, γ in radians."""
+""" Closest contour point 𝐜. θ, γ in radians. """
 function closest_contour(𝐈::Image, 𝐦::Vector, θ, γ=nothing)
     if haskey(𝐈.cc_memo, (θ, γ))
         return 𝐈.cc_memo[(θ, γ)]
