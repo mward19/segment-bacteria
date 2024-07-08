@@ -52,3 +52,12 @@ intensities = Float64.(intensities)
 
 
 image = Rays.Image(intensities)
+
+𝐦 = [75, 100, 100]
+θ = 1.3π
+γ = -π/24
+cc = Rays.closest_contour(image, 𝐦, θ, γ)
+display3d(image.contours, [𝐦, cc])
+
+Rays.get_orientation(image, 𝐦, θ, γ)
+

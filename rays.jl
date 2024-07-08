@@ -131,6 +131,7 @@ end
 
 """ Closest contour point 𝐜. θ, γ in radians. """
 function closest_contour(𝐈::Image, 𝐦::Vector, θ, γ=nothing)
+    # TODO: test that this works
     if haskey(𝐈.cc_memo, (θ, γ))
         return 𝐈.cc_memo[(θ, γ)]
     end
