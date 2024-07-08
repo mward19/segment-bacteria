@@ -60,3 +60,13 @@ contours = BitArray([gradient_norm[i...] >= threshold
             for i in Iterators.product(axes(gradient_norm)...)])
 
 image = Rays.Image(intensities, contours, gradient, gradient_norm)
+𝐦 = [63, 300]
+θ = - π/4 + 0.01
+cc = Rays.closest_contour(image, 𝐦, θ)
+
+show_pos(image, vec) = scatter!(plot(Gray.(image.contours)), [vec[2]], [vec[1]])
+show_pos(image, 𝐦) |> display
+show_pos(image, cc) |> display
+
+orient = Rays.get_orientation(image, 𝐦, θ)
+# Working!!

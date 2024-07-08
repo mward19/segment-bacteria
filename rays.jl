@@ -2,6 +2,7 @@ module Rays
 
 using LinearAlgebra
 using ImageFiltering
+using StatsBase
 using Infiltrator
 
 struct Image
@@ -13,15 +14,44 @@ struct Image
     cc_memo::Dict # Memo of closest contours. Key is tuple of angle(s)
 end
 
-""" Constructs an Image from intensities and contours. """
-Image(intensities::AbstractArray, contours::AbstractArray) = Image(
-    intensities,
-    contours,
-    Array{Vector{Float64}}(undef, size(intensities)...),
-    Array{Float64}(undef, size(intensities)...),
-    AbstractArray{Bool}(fill(false, size(intensities)...)),
-    Dict{Tuple, Vector{Float64}}()
-)
+#""" Constructs an Image from intensities and contours. """
+#Image(intensities::AbstractArray, contours::AbstractArray) = Image(
+#    intensities,
+#    contours,
+#    Array{Vector{Float64}}(undef, size(intensities)...),
+#    Array{Float64}(undef, size(intensities)...),
+#    AbstractArray{Bool}(fill(false, size(intensities)...)),
+#    Dict{Tuple, Vector{Float64}}()
+#)
+
+""" Constructs an Image from intensities only. """
+function Image(intensities::AbstractArray)
+    # Calculate gradients
+    gradient_by_dim = imgradients(intensities, KernelFactors.ando3, "reflect")
+    gradient = [
+        [gradient[𝐦...] for gradient in gradient_by_dim]
+        for 𝐦 in Iterators.product(axes(intensities)...)
+    ]
+    gradient_norm = norm.(gradient)
+    normalized_gradient = gradient ./ gradient_norm
+    grad_calculated = trues(size(gradient))
+    
+    # TODO:
+    # Use gradients to get contours with thresholding
+    percentile_threshold = 98
+    threshold = percentile(vec(gradient_norm), percentile_threshold)
+    contours = BitArray([gradient_norm[i...] >= threshold 
+                            for i in Iterators.product(axes(gradient_norm)...)])
+    return Image(
+        intensities,
+        contours,
+        normalized_gradient,
+        gradient_norm,
+        grad_calculated,
+        Dict{Tuple, Vector{Float64}}()
+    )
+end
+
 
 """ Constructs an Image from intensities, contours, gradients, and gradient norms. """
 function Image(
@@ -74,7 +104,7 @@ function ray_vector(θ, γ=nothing)
     if isnothing(γ) # 2D case
         return [cos(θ), sin(θ)]
     else # 3D case
-        return [cos(θ)*cos(γ), sin(θ)*cos(γ), sin(γ)]
+        return [sin(γ), cos(θ)*cos(γ), sin(θ)*cos(γ)]
     end
 end
 
